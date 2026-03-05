@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>INFRA — Automated by Ansible</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --black: #080808;
+      --white: #f5f0e8;
+      --orange: #ff4d00;
+      --orange-dim: rgba(255,77,0,0.12);
+      --gray: #1a1a1a;
+      --muted: #555;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; cursor: none; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Instrument Serif', serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Custom cursor ── */
+    .cursor {
+      position: fixed;
+      width: 12px; height: 12px;
+      background: var(--orange);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, width 0.2s, height 0.2s;
+      transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(255,77,0,0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.35s ease, width 0.3s, height 0.3s, opacity 0.3s;
+      transform: translate(-50%, -50%);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--orange); }
+
+    /* ── Progress bar ── */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: var(--orange);
+      z-index: 1000;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 48px;
+      mix-blend-mode: difference;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-link {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--white);
+      text-decoration: none;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .nav-link:hover { opacity: 1; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+    }
+
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 0 80px 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .issue-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: revealUp 0.6s 0.2s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(7rem, 12vw, 13rem);
+      line-height: 0.88;
+      letter-spacing: -0.01em;
+      opacity: 0;
+      animation: revealUp 0.8s 0.4s forwards;
+    }
+    .hero-title .outline {
+      -webkit-text-stroke: 1.5px var(--white);
+      color: transparent;
+    }
+    .hero-title .filled { color: var(--white); }
+    .hero-title .accent { color: var(--orange); }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: rgba(245,240,232,0.55);
+      max-width: 360px;
+      margin-top: 32px;
+      font-style: italic;
+      opacity: 0;
+      animation: revealUp 0.8s 0.7s forwards;
+    }
+
+    .hero-right {
+      position: relative;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 140px 48px 80px;
+      gap: 2px;
+    }
+
+    /* Vertical text */
+    .vert-label {
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      color: rgba(255,255,255,0.2);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* Terminal card */
+    .terminal {
+      background: var(--gray);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 6px;
+      overflow: hidden;
+      opacity: 0;
+      animation: revealUp 0.8s 0.6s forwards;
+    }
+    .term-header {
+      background: rgba(255,255,255,0.04);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .d-r { background: #ff5f57; }
+    .d-y { background: #febc2e; }
+    .d-g { background: #28c840; }
+    .term-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.3);
+      margin-left: 4px;
+    }
+    .term-body { padding: 20px; }
+    .tl {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 2;
+      color: rgba(245,240,232,0.45);
+    }
+    .tl .p  { color: var(--orange); }
+    .tl .c  { color: var(--white); }
+    .tl .ok { color: #28c840; }
+    .tl .sk { color: #febc2e; }
+    .tl .dim { color: rgba(255,255,255,0.2); }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,77,0,0.4), transparent);
+      margin: 0;
+    }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat {
+      padding: 48px 48px;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+    }
+    .stat.visible { opacity: 1; transform: translateY(0); }
+    .stat:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.5rem;
+      color: var(--orange);
+      line-height: 1;
+      display: block;
+    }
+    .stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    /* ── Features ── */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .feat {
+      padding: 64px 48px;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      opacity: 0;
+      transform: translateY(24px);
+      transition: all 0.6s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feat::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--orange-dim);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feat:hover::before { opacity: 1; }
+    .feat.visible { opacity: 1; transform: translateY(0); }
+    .feat:last-child { border-right: none; }
+    .feat-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--orange);
+      letter-spacing: 0.15em;
+      margin-bottom: 20px;
+    }
+    .feat-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      color: var(--white);
+    }
+    .feat-body {
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: rgba(245,240,232,0.45);
+      font-style: italic;
+    }
+
+    /* ── Stack section ── */
+    .stack-section {
+      padding: 80px 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 20px;
+      border-radius: 3px;
+      letter-spacing: 0.08em;
+      transition: border-color 0.3s, background 0.3s, color 0.3s;
+      cursor: none;
+    }
+    .pill:hover {
+      border-color: var(--orange);
+      background: var(--orange-dim);
+      color: var(--orange);
+    }
+
+    /* ── Footer ── */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32px 48px;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      opacity: 0.3;
+    }
+    .footer-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .footer-text span { color: var(--orange); }
+
+    /* ── Animations ── */
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Marquee ── */
+    .marquee-wrap {
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 16px 0;
+      background: var(--orange);
+    }
+    .marquee-track {
+      display: flex;
+      gap: 0;
+      animation: marquee 18s linear infinite;
+      width: max-content;
+    }
+    .marquee-item {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.25em;
+      color: var(--black);
+      padding: 0 32px;
+      white-space: nowrap;
+    }
+    .marquee-sep {
+      color: rgba(0,0,0,0.3);
+      padding: 0 8px;
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-right { display: none; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+      .features { grid-template-columns: 1fr; }
+      nav { padding: 20px 24px; }
+      .hero-left { padding: 0 0 60px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- Progress bar -->
+  <div id="progress"></div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-logo">INFRA</div>
+    <div class="nav-right">
+      <a href="#stack" class="nav-link">Stack</a>
+      <a href="#features" class="nav-link">Features</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="issue-tag">— Automated Deployment · Vol. 01</div>
+      <h1 class="hero-title">
+        <span class="outline">AUTO</span><br>
+        <span class="filled">MATED</span><br>
+        <span class="accent">INFRA</span>
+      </h1>
+      <p class="hero-desc">
+        This server was provisioned, configured, and deployed
+        entirely through code. No manual SSH. No guesswork.
+        Just Ansible.
+      </p>
+    </div>
+
+    <div class="hero-right">
+      <div class="vert-label">Playbook Output</div>
+      <div class="terminal">
+        <div class="term-header">
+          <div class="dot d-r"></div>
+          <div class="dot d-y"></div>
+          <div class="dot d-g"></div>
+          <span class="term-title">deploy_static_webpage.yml</span>
+        </div>
+        <div class="term-body">
+          <div class="tl"><span class="p">❯ </span><span class="c">ansible-playbook deploy_static_webpage.yml</span></div>
+          <div class="tl dim">PLAY [Host Static Website] *********</div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Install Nginx</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Start Nginx service</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Create web directory</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Copy index.html</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Copy nginx.conf</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Enable site</span></div>
+          <div class="tl"><span class="sk">changed</span><span class="dim"> [server1] Reload Nginx</span></div>
+          <div class="tl"><span class="ok">ok</span><span class="dim"> [server1] Allow HTTP firewall</span></div>
+          <div class="tl" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+            <span class="ok">PLAY RECAP</span><span class="dim"> ── 7 ok, 1 changed, 0 failed ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span class="marquee-item">ANSIBLE<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">NGINX<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">UBUNTU<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">AWS EC2<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">INFRASTRUCTURE AS CODE<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">ZERO MANUAL STEPS<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">ANSIBLE<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">NGINX<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">UBUNTU<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">AWS EC2<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">INFRASTRUCTURE AS CODE<span class="marquee-sep">✦</span></span>
+      <span class="marquee-item">ZERO MANUAL STEPS<span class="marquee-sep">✦</span></span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat">
+      <span class="stat-num">00</span>
+      <div class="stat-label">Manual Steps</div>
+    </div>
+    <div class="stat">
+      <span class="stat-num">01</span>
+      <div class="stat-label">Playbook Run</div>
+    </div>
+    <div class="stat">
+      <span class="stat-num">08</span>
+      <div class="stat-label">Tasks Executed</div>
+    </div>
+    <div class="stat">
+      <span class="stat-num">100%</span>
+      <div class="stat-label">Automated</div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features" id="features">
+    <div class="feat">
+      <div class="feat-num">— 01</div>
+      <div class="feat-title">Idempotent</div>
+      <p class="feat-body">Run the playbook once or a hundred times. The result is always the same. No side effects, no surprises.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-num">— 02</div>
+      <div class="feat-title">Scalable</div>
+      <p class="feat-body">One playbook. Two servers or two hundred. Ansible handles them all in parallel without breaking a sweat.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-num">— 03</div>
+      <div class="feat-title">Repeatable</div>
+      <p class="feat-body">Every environment — dev, staging, production — is configured identically. No more "works on my machine".</p>
+    </div>
+  </div>
+
+  <!-- Stack -->
+  <div class="stack-section" id="stack">
+    <div class="section-label">— Tech Stack</div>
+    <div class="pills">
+      <div class="pill">Ansible 2.15</div>
+      <div class="pill">Nginx</div>
+      <div class="pill">Ubuntu 22.04</div>
+      <div class="pill">AWS EC2</div>
+      <div class="pill">UFW Firewall</div>
+      <div class="pill">SSH Key Auth</div>
+      <div class="pill">Systemd</div>
+      <div class="pill">apt Package Manager</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">INFRA</div>
+    <div class="footer-text">
+      Deployed with <span>Ansible</span> · Served by <span>Nginx</span> · Running on <span>Ubuntu</span>
+    </div>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+    });
+    (function animRing() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(animRing);
+    })();
+    document.querySelectorAll('a, .pill, .feat').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'translate(-50%,-50%) scale(2.5)';
+        ring.style.opacity = '0';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+        ring.style.opacity = '1';
+      });
+    });
+
+    // Scroll progress
+    const bar = document.getElementById('progress');
+    window.addEventListener('scroll', () => {
+      const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+      bar.style.width = pct + '%';
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.stat, .feat').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
