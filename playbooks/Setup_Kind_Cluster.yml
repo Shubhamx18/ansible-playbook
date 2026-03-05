@@ -1,0 +1,35 @@
+---
+- name: Setup KIND Cluster with 2 Worker Nodes
+  hosts: webservers
+  become: yes
+
+  vars:
+    kind_version: "v0.22.0"
+    cluster_name: "my-cluster"
+
+  tasks:
+
+    - name: Create KIND cluster config
+      copy:
+        dest: /home/ubuntu/kind-config.yml
+        content: |
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          name: {{ cluster_name }}
+          nodes:
+            - role: control-plane
+            - role: worker
+            - role: worker
+
+    - name: Create KIND cluster
+      shell: kind create cluster --config /home/ubuntu/kind-config.yml
+      become_user: ubuntu
+
+    - name: Verify cluster nodes
+      shell: kubectl get nodes
+      register: nodes_out
+      become_user: ubuntu
+
+    - name: Print nodes
+      debug:
+        var: nodes_out.stdout
