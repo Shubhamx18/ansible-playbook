@@ -1,0 +1,29 @@
+---
+- name: Deploy Application
+  hosts: appservers
+  become: yes
+
+  vars:
+    app_image: "add image here"
+    app_port: 3000
+    container_name: "myapp"
+
+  tasks:
+    - name: Pull latest Docker image
+      command: docker pull {{ app_image }}
+
+    - name: Stop existing container
+      command: docker stop {{ container_name }}
+      ignore_errors: yes
+
+    - name: Remove existing container
+      command: docker rm {{ container_name }}
+      ignore_errors: yes
+
+    - name: Run new container
+      command: >
+        docker run -d
+        --name {{ container_name }}
+        -p {{ app_port }}:{{ app_port }}
+        --restart always
+        {{ app_image }}
