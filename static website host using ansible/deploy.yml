@@ -1,23 +1,27 @@
 ---
-- name: Deploy Static Website
-  hosts: servers
+- name: Host Static Website using Nginx
+  hosts: webservers
   become: yes
 
   tasks:
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
 
     - name: Install Nginx
       apt:
         name: nginx
         state: present
-        update_cache: yes
 
-    - name: Copy website file
-      copy:
-        src: index.html
-        dest: /var/www/html/index.html
-
-    - name: Ensure Nginx is running
-      service:
+    - name: Start and enable Nginx
+      systemd:
         name: nginx
         state: started
         enabled: yes
+
+    - name: Copy index.html to server
+      copy:
+        src: /home/ubuntu/ansible.html
+        dest: /var/www/html/index.html
+        mode: '0644'
