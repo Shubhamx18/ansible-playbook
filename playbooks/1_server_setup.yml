@@ -1,0 +1,25 @@
+---
+- name: Setup Server Baseline
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update and upgrade packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install essential tools
+      apt:
+        name:
+          - curl
+          - vim
+          - git
+          - htop
+          - unzip
+          - net-tools
+        state: present
+
+    - name: Set timezone to UTC
+      timezone:
+        name: UTC
